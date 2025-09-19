@@ -93,7 +93,30 @@ def create_slicing_charts(df):
     df_avg_jobs = df[(df['date'].dt.year >= year_range[0]) & (df['date'].dt.year <= year_range[1])]
     avg_jobs_created = df_avg_jobs['total_nonfarm'].mean()
     st.metric(label=f"Average Jobs Created ({year_range[0]}-{year_range[1]})", value=f"{avg_jobs_created:,.0f}")
-
+    
+    # Yearly Job Creation Bar Chart (dynamic with slider)
+    st.subheader("Yearly Job Creation (Bar Chart)")
+    df['year'] = df['date'].dt.year
+    yearly_jobs = df.groupby('year')['mom_change_abs'].sum().reset_index()
+    selected_year = st.slider(
+        "Select Year for Bar Chart:",
+        min_value=int(yearly_jobs['year'].min()),
+        max_value=int(yearly_jobs['year'].max()),
+        value=int(yearly_jobs['year'].max()),
+        step=1
+    )
+    filtered = df[df['year'] == selected_year].copy()
+    filtered['month'] = filtered['date'].dt.strftime('%b')
+    fig_bar = px.bar(
+        filtered,
+        x='month',
+        y='mom_change_abs',
+        title=f"Monthly Job Creation in {selected_year}",
+        labels={'mom_change_abs': 'Jobs Created', 'month': 'Month'}
+    )
+    st.plotly_chart(fig_bar, use_container_width=True)
+    st.write(f"Total jobs created in {selected_year}: {filtered['mom_change_abs'].sum():,.0f}")
+    
     # Slicing 2: Monthly employment comparison for Mar-Dec 2020 vs. 2019
     st.subheader("Monthly Employment Comparison (Mar-Dec 2020 vs. 2019)")
     df['year'] = df['date'].dt.year
